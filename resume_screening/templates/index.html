@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume Screener - HR Panel</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header class="header fade-in">
+            <h1>Resume Screening AI</h1>
+            <p>Match candidates with your job descriptions using Machine Learning</p>
+        </header>
+
+        <section class="card fade-in">
+            <form action="/" method="POST" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="job_title">Job Title</label>
+                    <input type="text" id="job_title" name="job_title" class="form-control" placeholder="e.g. Senior Python Developer" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="job_description">Job Description</label>
+                    <textarea id="job_description" name="job_description" class="form-control" placeholder="Paste the detailed job requirements here..." required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Upload Resumes (PDF or DOCX)</label>
+                    <label for="resumes" class="file-upload-area">
+                        <div id="file-label">Click to select files or drag and drop</div>
+                        <input type="file" id="resumes" name="resumes" multiple accept=".pdf,.docx" style="display: none;" required>
+                        <div id="file-names" style="margin-top: 1rem; font-size: 0.875rem; color: var(--text-muted);">No files selected</div>
+                    </label>
+                </div>
+
+                <button type="submit" class="btn">Analyze & Rank Candidates</button>
+            </form>
+        </section>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('resumes');
+        const fileNamesDiv = document.getElementById('file-names');
+        const fileLabel = document.getElementById('file-label');
+
+        fileInput.addEventListener('change', () => {
+            const files = fileInput.files;
+            if (files.length > 0) {
+                const names = Array.from(files).map(f => f.name).join(', ');
+                fileNamesDiv.textContent = `${files.length} file(s) selected: ${names}`;
+                fileLabel.textContent = "Files Selected";
+                fileLabel.style.color = "#6366f1";
+            } else {
+                fileNamesDiv.textContent = "No files selected";
+                fileLabel.textContent = "Click to select files or drag and drop";
+            }
+        });
+    </script>
+</body>
+</html>

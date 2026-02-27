@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Ranking Results - {{ job.title }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>Advanced AI Ranking</h1>
+            <p>10-Step Semantic Analysis for <strong>{{ job.title }}</strong></p>
+        </header>
+
+        <section class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                <h2 style="font-size: 1.25rem;">Candidate Leaderboard</h2>
+                <a href="/" class="btn" style="width: auto; padding: 0.5rem 1rem; font-size: 0.875rem;">New
+                    Screening</a>
+            </div>
+
+            <table class="results-table">
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Candidate Profile</th>
+                        <th>Match Score</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for resume in resumes %}
+                    <tr>
+                        <td><strong>#{{ loop.index }}</strong></td>
+                        <td>
+                            <div style="font-weight: 700;">{{ resume.ai_analysis.candidate_summary.name or
+                                resume.filename }}</div>
+                            <small style="color: var(--text-muted);">{{
+                                resume.ai_analysis.candidate_summary.experience_years }} Experience</small>
+                        </td>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 1rem;">
+                                <span
+                                    class="score-badge {% if resume.similarity_score > 70 %}score-high{% elif resume.similarity_score > 40 %}score-mid{% else %}score-low{% endif %}">
+                                    {{ resume.similarity_score }}%
+                                </span>
+                                <div class="progress-container" style="flex: 1; min-width: 80px;">
+                                    <div class="progress-bar" style="width: {{ resume.similarity_score }}%"></div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <button class="btn" style="width: auto; padding: 0.4rem 0.8rem; font-size: 0.75rem;"
+                                onclick="showAnalysis('{{ resume.id }}')">
+                                View Full Analysis
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+    </div>
+
+    <!-- Analysis Modals -->
+    {% for resume in resumes %}
+    <div id="modal-{{ resume.id }}" class="modal-layout">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeAnalysis('{{ resume.id }}')">&times;</span>
+
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem;">
+                <div>
+                    <h2 style="font-size: 2rem; margin-bottom: 0.5rem;">{{ resume.ai_analysis.candidate_summary.name or
+                        resume.filename }}</h2>
+                    <p class="hiring-status 
+                        {% if 'Strong' in resume.ai_analysis.hiring_recommendation %}status-hire
+                        {% elif 'Consider' in resume.ai_analysis.hiring_recommendation %}status-consider
+                        {% else %}status-reject{% endif %}">
+                        {{ resume.ai_analysis.hiring_recommendation }}
+                    </p>
+                </div>
+                <div style="text-align: right;">
+                    <div style="font-size: 3rem; font-weight: 800; color: var(--primary-color);">{{
+                        resume.similarity_score }}%</div>
+                    <div style="color: var(--text-muted); font-size: 0.8rem;">OVERALL MATCH</div>
+                </div>
+            </div>
+
+            <div class="analysis-grid">
+                <!-- Step 1 & 2: Summaries -->
+                <div class="analysis-card">
+                    <h3>Candidate Summary</h3>
+                    <p style="font-size: 0.9rem; margin-bottom: 1rem;">{{ resume.ai_analysis.candidate_summary.education
+                        }}</p>
+                    <div class="tag-list">
+                        {% for skill in resume.ai_analysis.candidate_summary.primary_skills %}
+                        <span class="tag">{{ skill }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Step 5: Skill Gaps -->
+                <div class="analysis-card">
+                    <h3>Missing & Gaps</h3>
+                    <div class="tag-list">
+                        {% for skill in resume.ai_analysis.missing_skills %}
+                        <span class="tag tag-red">{{ skill }}</span>
+                        {% endfor %}
+                    </div>
+                    <div class="recommendation-box">
+                        <strong style="font-size: 0.8rem; color: var(--primary-color);">RECOMMENDATION:</strong>
+                        <p style="font-size: 0.85rem; margin-top: 0.5rem;">{{
+                            resume.ai_analysis.skill_gap_recommendations.recommended_courses[0] if
+                            resume.ai_analysis.skill_gap_recommendations.recommended_courses else 'Continue upskilling
+                            in core JD requirements.' }}</p>
+                    </div>
+                </div>
+
+                <!-- Step 7: Personality -->
+                <div class="analysis-card">
+                    <h3>Professional Traits</h3>
+                    {% for trait, level in resume.ai_analysis.personality_insights.items() %}
+                    <div class="insight-bar">
+                        <div class="insight-label">
+                            <span>{{ trait.replace('_', ' ').title() }}</span>
+                            <span>{{ level }}</span>
+                        </div>
+                        <div class="progress-container">
+                            <div class="progress-bar"
+                                style="width: {% if level == 'High' %}90%{% elif level == 'Medium' %}60%{% else %}30%{% endif %}">
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Step 9: Explanation -->
+                <div class="analysis-card" style="grid-column: span 2;">
+                    <h3>AI Feedback (Explainable Output)</h3>
+                    <p class="explanation-text">{{ resume.ai_analysis.final_explanation }}</p>
+                </div>
+
+                <!-- Step 6: Quality -->
+                <div class="analysis-card">
+                    <h3>Resume Quality</h3>
+                    <div style="font-size: 0.85rem;">
+                        <p><strong>ATS:</strong> {{ resume.ai_analysis.resume_quality_feedback.ats_compatibility }}</p>
+                        <p><strong>Grammar:</strong> {{ resume.ai_analysis.resume_quality_feedback.grammar_feedback }}
+                        </p>
+                        <p><strong>Length:</strong> {{ resume.ai_analysis.resume_quality_feedback.length_feedback }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+    <script>
+        function showAnalysis(id) {
+            document.getElementById('modal-' + id).style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeAnalysis(id) {
+            document.getElementById('modal-' + id).style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+
+        window.onclick = function (event) {
+            if (event.target.className === 'modal-layout') {
+                event.target.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            }
+        }
+    </script>
+</body>
+
+</html>
